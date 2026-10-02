@@ -1,0 +1,119 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#2f5d7c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Y_eld."><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Y_eld. — I yield</title>
+<style>
+:root{--bg:#f3f0ea;--card:#fff;--ink:#1c2733;--mut:#69727d;--acc:#2f5d7c;--on:#fff;--line:#dcd7cc;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111a22;--card:#1a2530;--ink:#eee9df;--mut:#98a4af;--acc:#86b6d6;--on:#0e1620;--line:#2a3845}}
+:root[data-theme="dark"]{--bg:#111a22;--card:#1a2530;--ink:#eee9df;--mut:#98a4af;--acc:#86b6d6;--on:#0e1620;--line:#2a3845}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:520px;margin:0 auto;padding:20px 18px 110px}
+h1{font:600 26px Georgia,serif;margin:4px 0 2px}h2{font:600 15px system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:26px 0 10px}
+.mut{color:var(--mut);font-size:16px}.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:10px 0}.bar i{display:block;height:100%;background:var(--acc)}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.chip,.btn{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;min-height:54px;cursor:pointer}
+.chip.on{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.btn{width:100%;text-align:left;margin-bottom:10px;font-weight:600}.btn.p{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px;margin:6px 0}
+textarea{min-height:110px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;font:inherit;font-size:12px;color:var(--mut);background:none;border:0;padding:14px 0;min-height:56px}nav button.on{color:var(--acc);font-weight:700}
+.toast{background:var(--acc);color:var(--on);border-radius:14px;padding:14px 16px;margin:12px 0}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs .chip{flex:1;padding:10px 6px;font-size:15px;text-align:center}
+.th{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.th img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}.lock{font-size:44px;text-align:center}</style></head><body><main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const MOODS=[["😊","Great"],["🙂","Good"],["😐","Okay"],["😴","Tired"],["😣","Stressed"],["🥺","Lonely"],["😤","Frustrated"],["🫥","Drained"]];
+const NEEDS=["Rest","Food","Sleep","Talk","Space","Music","Call home","Shower","Nothing"];
+const TAGS=["Funny","Hard","First","Last","Home","People","Work","Place","Ship lore","Quirky","Give it a shot","God's way"];
+const THEMES=[["Arrival","Everything is new. What did you notice first?","Psalm 139:9-10"],["Rhythm","What helps you through a shift?","Proverbs 3:5-6"],["The long stretch","Some days are heavy. No need to explain.","Matthew 11:28"],["Small things","What small thing made today bearable?","Philippians 4:6-7"],["Halfway","What is different from day one?","Psalm 23:3"],["The quiet middle","Boring is allowed. What do you hold onto at night?","Psalm 46:10"],["Home pulls","What do you miss, and what is waiting for you?","Psalm 107:30"],["Counting down","Who onboard do you want to remember?","Isaiah 41:10"],["Landing","What are you bringing home?","Lamentations 3:22-23"]];
+let S;try{S=JSON.parse(localStorage.getItem("watch1"))}catch(e){}
+S=S||{start:new Date().toISOString().slice(0,10),e:[],lists:{ppl:[],miss:[],wait:[]},letters:[],pin:""};
+let K=null,salt=null;
+const idb=()=>new Promise((r,j)=>{const q=indexedDB.open("yeld",1);q.onupgradeneeded=()=>q.result.createObjectStore("k");q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
+const iget=async k=>{const d=await idb();return new Promise((r,j)=>{const q=d.transaction("k").objectStore("k").get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)})};
+const iset=async(k,v)=>{const d=await idb();return new Promise((r,j)=>{const t=d.transaction("k","readwrite");t.objectStore("k").put(v,k);t.oncomplete=()=>r();t.onerror=()=>j(t.error)})};
+const idel=async k=>{const d=await idb();return new Promise((r,j)=>{const t=d.transaction("k","readwrite");t.objectStore("k").delete(k);t.oncomplete=()=>r();t.onerror=()=>j(t.error)})};const hasPw=()=>{try{return localStorage.getItem("pw")=="1"}catch(e){return false}};
+async function save(){try{if(K){const iv=crypto.getRandomValues(new Uint8Array(12));const c=await crypto.subtle.encrypt({name:"AES-GCM",iv},K,enc.encode(JSON.stringify(S)));await iset("w2",{salt:tb(salt),iv:tb(iv),data:tb(c)})}else await iset("w1",S);return 1}catch(e){return 0}}S.lists.vis=S.lists.vis||[];
+function fix(){S.lists.vis=S.lists.vis||[];S.drops=S.drops||[];if(S.cap&&S.cap.photos)S.drops.push({id:1,date:S.cap.date,note:S.cap.note,photos:S.cap.photos});S.cap=null;if(!S.p1){S.drops=S.drops.filter(x=>x.date!="2026-10-30"&&x.date!="2026-11-25");S.p1=1}}fix();let capD={photos:[]},capOpen=null,cd2=null,capG=false;const cm=t=>{const x=document.getElementById("cmsg");if(x)x.textContent=t};
+const enc=new TextEncoder(),dec=new TextDecoder(),today=()=>new Date().toLocaleDateString("en-CA");
+function tb(u){let s="",a=new Uint8Array(u);for(let i=0;i<a.length;i+=8192)s+=String.fromCharCode.apply(null,a.subarray(i,i+8192));return btoa(s)}
+function fb(s){const b=atob(s),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+async function key(p,salt){const k=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:150000,hash:"SHA-256"},k,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function seal(p,o){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));const c=await crypto.subtle.encrypt({name:"AES-GCM",iv},await key(p,salt),enc.encode(JSON.stringify(o)));return{salt:tb(salt),iv:tb(iv),data:tb(c)}}
+async function unseal(p,c){return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:fb(c.iv)},await key(p,fb(c.salt)),fb(c.data))))}
+const gv=id=>(document.getElementById(id)||{}).value||"";
+async function gHash(p,s0){const k=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveBits"]);return tb(await crypto.subtle.deriveBits({name:"PBKDF2",salt:s0,iterations:150000,hash:"SHA-256"},k,256))}
+async function gSet(){const a=gv("g1");if(a.length<4||a!=gv("g2"))return cm("Passcode must match and be 4+ characters.");const s0=crypto.getRandomValues(new Uint8Array(16));S.gp={s:tb(s0),h:await gHash(a,s0)};if(!(await save())){S.gp=null;return cm("Couldn't save.")}capG=true;render()}
+async function gOpen(){try{if(await gHash(gv("g1"),fb(S.gp.s))==S.gp.h){capG=true;render()}else cm("Not quite.")}catch(e){cm("Not quite.")}}
+async function capAdd(){const n=capD.photos,d=gv("cd"),t=gv("cn");
+if(!n.length)return cm("Pick at least one photo.");if(!d)return cm("Choose the day it opens.");
+let e=S.drops.find(x=>x.date==d);const nw=!e;if(nw){e={id:Date.now(),date:d,note:t,photos:[]};S.drops.push(e)}
+const on=e.note;e.photos.push(...n);if(!nw&&t)e.note=(e.note?e.note+"\n":"")+t;
+if(!(await save())){e.photos.splice(-n.length);e.note=on;if(nw)S.drops.pop();return cm("Couldn't save. The phone may be out of storage.")}
+capD={photos:[]};msg="Saved for "+d;render()}
+async function setPw(){const a=gv("np");if(a.length<4||a!=gv("np2"))return cm("Password must match and be 4+ characters.");
+if(hasPw()){try{await unseal(gv("cp"),await iget("w2"))}catch(e){return cm("Current password isn't right.")}}
+try{salt=crypto.getRandomValues(new Uint8Array(16));K=await key(a,salt);if(!(await save()))return cm("Couldn't save.");localStorage.setItem("pw","1");try{await idel("w1")}catch(e){}render();cm("Password set. It opens from now on.")}catch(e){cm("This browser can't encrypt.")}}
+async function unlockPw(){try{const p=gv("pin"),b=await iget("w2"),k=await key(p,fb(b.salt));S=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:fb(b.iv)},k,fb(b.data))));K=k;salt=fb(b.salt);fix();unlocked=true;msg=""}catch(e){msg="Not quite."}render()}
+const shrink=f=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);r(c.toDataURL("image/jpeg",.75))};im.src=fr.result};fr.readAsDataURL(f)});
+const esc=s=>String(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let view="home",mode=1,D={mood:[],need:"",energy:0,tag:""},msg="",unlocked=!hasPw(),open=0;
+const day=()=>Math.max(0,Math.floor((Date.now()-new Date(S.start))/864e5));
+const month=()=>Math.min(9,Math.floor(day()/30.4)+1);
+const chips=(k,arr,multi)=>`<div class="row">${arr.map(a=>{const v=Array.isArray(a)?a[1]:a,l=Array.isArray(a)?a[0]+" "+a[1]:a,on=multi?D[k].includes(v):D[k]===v;return `<button class="chip${on?" on":""}" data-k="${k}" data-v="${v}" data-m="${multi?1:0}">${l}</button>`}).join("")}</div>`;
+function add(o){S.e.unshift(Object.assign({id:Date.now(),t:new Date().toISOString(),mo:month()},o));save()}
+function render(){
+const A=document.getElementById("app");
+if(!unlocked){A.innerHTML=`<h1>Welcome back</h1><p class="mut">Enter your password.</p><input id="pin" type="password" placeholder="Password"><button class="btn p" data-a="unlock">Open</button><p class="mut">${esc(msg)}</p>`;document.getElementById("nav").innerHTML="";return}
+document.getElementById("nav").innerHTML=[["home","Home"],["journey","Journey"],["mem","Memories"],["me","Me"],["cap","From home"],["set","Settings"]].map(([v,l])=>`<button data-go="${v}" class="${view==v||(view=="write"&&v=="home")?"on":""}">${l}</button>`).join("");
+const toast=msg?`<div class="toast">${esc(msg)}</div>`:"";let h="";
+if(view=="home"){const m=month();h=`<h1>Y_eld. <span class="mut" style="font-size:18px">I yield.</span></h1><p><b>Month ${m} of 9 · ${THEMES[m-1][0]}</b><br><span class="mut">${THEMES[m-1][2]}</span></p><div class="bar"><i style="width:${Math.min(100,day()/2.7)}%"></i></div><p class="mut">Day ${day()+1}. You've already come this far.</p>${toast}
+${hasPw()?"":`<div class="card"><b>Set your password</b><div class="mut">Only the person using this journal should be able to open it.</div><button class="btn p" data-go="set" style="margin-top:10px">Set password</button></div>`}<h2>How are you?</h2><div class="row">${MOODS.slice(0,5).map(a=>`<button class="chip" data-a="qm" data-v="${a[1]}">${a[0]}</button>`).join("")}</div>
+<h2>What do you need?</h2><div class="row">${NEEDS.slice(0,5).map(n=>`<button class="chip" data-a="qn" data-v="${n}">${n}</button>`).join("")}</div>
+<h2>&nbsp;</h2><button class="btn p" data-go="write" data-mode="1">+ Quick entry</button><button class="btn" data-go="week">Weekly check-in</button><button class="btn" data-go="cap">🔒 Something from home${S.drops&&S.drops.length?" · "+S.drops.filter(x=>x.date<=today()).length+" ready":""}</button><button class="btn" data-go="write" data-mode="3">Write</button><button class="btn" data-go="mem">Memories</button><button class="btn" data-go="journey">My journey</button>`}
+if(view=="write"){h=`<h1>Today</h1><p class="mut">${["","30 seconds is plenty.","Everything here is optional.","One sentence is enough."][mode]}</p>
+<div class="tabs">${[["1","30 sec"],["2","A minute"],["3","I have time"]].map(([i,l])=>`<button class="chip${mode==i?" on":""}" data-mode="${i}" data-go="write">${l}</button>`).join("")}</div>
+<h2>How are you, really?</h2>${chips("mood",MOODS,1)}`;
+if(mode==1)h+=`<h2>What do you need right now?</h2>${chips("need",NEEDS,0)}<h2>One word about today</h2><input id="word" maxlength="30">`;
+if(mode==2)h+=`<h2>Energy</h2>${chips("energy",["1","2","3","4","5"],0)}<h2>What was good?</h2><input id="good"><h2>What made today hard?</h2><input id="hard"><h2>Anything to be thankful for?</h2><input id="thanks"><h2>Something to remember</h2><input id="rem">`;
+if(mode==3)h+=`<h2>What happened today?</h2><textarea id="text" placeholder="Write as much or as little as you like."></textarea><h2>Tag it</h2>${chips("tag",TAGS,0)}`;
+h+=`<h2>&nbsp;</h2><button class="btn p" data-a="save">Save</button><button class="btn" data-a="skip">Skip today</button>${toast}`}
+if(view=="journey"){h=`<h1>Your voyage</h1><p class="mut">Nine months. No catching up needed.</p>`+THEMES.map((t,i)=>{const es=S.e.filter(e=>e.mo==i+1),c={};es.forEach(e=>(e.mood||[]).forEach(x=>c[x]=(c[x]||0)+1));const top=Object.keys(c).sort((a,b)=>c[b]-c[a])[0];return `<div class="card" style="${i+1==month()?"border-color:var(--acc)":""}"><b>Month ${i+1} · ${t[0]}</b> <span class="mut">· ${t[2]}</span>${i+1==month()?" (now)":""}<div class="mut">${t[1]}</div><div class="mut">${es.length} entries${top?" · mostly "+top.toLowerCase():""}</div></div>`}).join("")}
+if(view=="mem"){const f=open||"";const L=S.e.filter(e=>(e.text||e.rem||e.good||e.word||e.tag)&&(!f||e.tag==f));h=`<h1>Memories</h1><div class="row">${["",...TAGS].map(t=>`<button class="chip${f==t?" on":""}" data-a="flt" data-v="${t}">${t||"All"}</button>`).join("")}</div><h2>&nbsp;</h2>`+(L.length?L.map(e=>`<div class="card"><div class="mut">${new Date(e.t).toLocaleDateString()} · Month ${e.mo}${e.tag?" · #"+esc(e.tag):""}</div>${esc(e.text||e.rem||e.good||e.word)}</div>`).join(""):`<p class="mut">Nothing here yet. Moments you write down will rest here.</p>`)}
+if(view=="me"){const box=(k,t,ph)=>`<h2>${t}</h2>${S.lists[k].map(x=>`<div class="card">${esc(x)}</div>`).join("")}<input id="in_${k}" placeholder="${ph}"><button class="btn" data-a="addl" data-v="${k}">Add</button>`;
+h=`<h1>Me</h1>`+box("ppl","People I miss","A name")+box("miss","Things I miss","Food, bed, rain…")+box("wait","Waiting for me","Places, people, meals…")+box("vis","Vision page","Where is this season leading?")+`<h2>Letters (never have to be sent)</h2>${S.letters.map(l=>`<div class="card"><div class="mut">${new Date(l.t).toLocaleDateString()} · ${esc(l.to)}</div>${esc(l.body)}</div>`).join("")}<input id="lto" placeholder="To: family, partner, future me…"><textarea id="lbody" placeholder="Write it even if you never send it."></textarea><button class="btn" data-a="letter">Keep letter</button>`}
+if(view=="week"){h=`<h1>This week</h1><p class="mut">Tap what fits. Write only if you want to.</p><h2>How are you, really?</h2>${chips("mood",MOODS,1)}
+<h2>Home</h2>${chips("call",["Called","Texted","Not this week"],0)}<input id="wh" placeholder="Something from home I'm holding on to">
+<h2>This week's balance (1–5)</h2>${[["bw","Work"],["bh","Home"],["bp","People onboard"],["bm","Me"]].map(([k,l])=>`<div class="mut">${l}</div>${chips(k,["1","2","3","4","5"],0)}`).join("")}
+<h2>God's way or distraction?</h2>${chips("foc",["Mostly focused","Mixed","Mostly distracted"],0)}<h2>Body</h2>${chips("body",["Ate and slept okay","Meh","Rough"],0)}<h2>Spending</h2>${chips("sp",["Not guilty","Guilty"],0)}
+<h2>Restoration check-in</h2><input id="wy" placeholder="What did I hand over this week?"><input id="wsq" placeholder="Side quest: videos, vlog, anything else"><input id="wg" placeholder="Something to be thankful for"><input id="wh2" placeholder="Holy Spirit's corner: what did I sense?"><h2>Things I don't want to say</h2><textarea id="wns"></textarea><button class="btn p" data-a="wsave">Save week</button>`}
+if(view=="cap"){const td=today(),ds=S.drops.slice().sort((a,b)=>a.date<b.date?-1:1),o=ds.find(x=>x.id==capOpen);
+if(o){h=`<h1>${esc(o.date)}</h1>${o.note?`<div class="card">${esc(o.note)}</div>`:""}<div class="th" style="grid-template-columns:1fr 1fr">${o.photos.map(p=>`<img src="${p}">`).join("")}</div><button class="btn" data-a="dclose">Close</button>`}
+else{const used=ds.reduce((a,x)=>a+x.photos.length,0),sug=["2026-10-30","2026-11-25","2026-12-15","2026-12-25","2027-01-01","2027-01-20","2027-02-01","2027-02-14","2027-03-06","2027-03-20","2027-04-07","2027-05-03","2027-06-01"];
+h=`<h1>Something from home</h1><p class="mut">${ds.length?"Little openings along the way. Each unlocks on its own day.":"Nothing here yet."}</p>${toast}`+ds.map(x=>{const rd=x.date<=td,l=Math.ceil((new Date(x.date)-new Date(td))/864e5),n=x.photos.length;return `<div class="card">${rd?`<b>${x.date}</b> · ${n} photo${n==1?"":"s"}<button class="btn p" data-a="dopen" data-v="${x.id}" style="margin:10px 0 0">Open</button>`:`🔒 Opens <b>${x.date}</b> · ${l} day${l==1?"":"s"} · ${n} waiting`}${capG?`<button class="btn" data-a="ddel" data-v="${x.id}" style="margin:10px 0 0;min-height:44px;font-size:15px">${cd2==x.id?"Tap again to delete":"Delete"}</button>`:""}</div>`}).join("")+(!capG?`<h2>For the giver</h2><p class="mut">${S.gp?"Enter the giver passcode to add or remove surprises.":"Set a giver passcode. Only the person adding surprises should know it. It keeps photos from being removed by anyone else."}</p><input id="g1" type="password" placeholder="Giver passcode">${S.gp?"":`<input id="g2" type="password" placeholder="Repeat passcode">`}<p id="cmsg" class="mut"></p><button class="btn" data-a="${S.gp?"gopen":"gset"}">${S.gp?"Unlock":"Set passcode"}</button>`:`<h2>Add a surprise</h2><p class="mut">Pick a day, add photos and a note. ${used} photo${used==1?"":"s"} added so far. Tap a date below or choose your own.</p><div class="row" style="margin-bottom:8px">${sug.map(d=>`<button class="chip" data-a="pick" data-v="${d}" style="padding:8px 10px;min-height:40px;font-size:14px">${ds.some(x=>x.date==d)?"✓ ":""}${d.slice(5,7)}-${d.slice(8)}-${d.slice(2,4)}</button>`).join("")}</div><input id="cd" type="date"><div class="th" id="thm"></div><input id="ph" type="file" accept="image/*" multiple><textarea id="cn" placeholder="A note for that day (optional)"></textarea><p id="cmsg" class="mut"></p><button class="btn p" data-a="capadd">Save</button>`)}}
+if(view=="set"){h=`<h1>Settings</h1><div class="card"><b>Everything stays on this device.</b><div class="mut">Nothing is uploaded. Works fully offline.</div></div><h2>Contract start date</h2><input id="st" type="date" value="${S.start}"><button class="btn" data-a="start">Update</button><h2>Journal password</h2><p class="mut">${hasPw()?"Everything is encrypted on this device. Only the password opens it.":"Not set yet. The person using this journal sets it."}</p>${hasPw()?`<input id="cp" type="password" placeholder="Current password">`:""}<input id="np" type="password" placeholder="New password"><input id="np2" type="password" placeholder="Repeat password"><p id="cmsg" class="mut"></p><button class="btn" data-a="setpw">${hasPw()?"Change password":"Set password"}</button><p class="mut">A forgotten password can't be recovered.</p><h2>Backup</h2><button class="btn" data-a="exp">Show my data to copy</button><textarea id="ex" readonly style="display:none"></textarea>${toast}`}
+A.innerHTML=h;msg=""}
+document.addEventListener("click",ev=>{const t=ev.target.closest("[data-go],[data-a],.chip[data-k]");if(!t)return;const d=t.dataset;
+if(d.k){if(d.m==1){const i=D[d.k].indexOf(d.v);i<0?D[d.k].push(d.v):D[d.k].splice(i,1)}else D[d.k]=D[d.k]===d.v?"":d.v;t.closest(".row").querySelectorAll(".chip").forEach(c=>{const v=c.dataset.v;c.classList.toggle("on",d.m==1?D[d.k].includes(v):D[d.k]===v)});return}
+if(d.mode)mode=+d.mode;
+if(d.go){view=d.go;if(view!="cap"){capOpen=null;capG=false}if(d.go!="write")D={mood:[],need:"",energy:0,tag:""};render();return}
+const g=id=>(document.getElementById(id)||{}).value||"";
+switch(d.a){
+case"qm":add({mood:[d.v]});msg="Saved. That's enough for today.";break;
+case"qn":add({need:d.v});msg="Okay. That's enough for today.";break;
+case"save":add({mood:D.mood,need:D.need,energy:D.energy,tag:D.tag,word:g("word"),good:g("good"),hard:g("hard"),thanks:g("thanks"),rem:g("rem"),text:g("text")});D={mood:[],need:"",energy:0,tag:""};view="home";msg="Saved. Rough day? You don't have to explain it.";break;
+case"skip":view="home";msg="Skipped a few days? That's okay. You don't have to catch up.";break;
+case"flt":open=d.v;break;
+case"addl":{const v=g("in_"+d.v).trim();if(v){S.lists[d.v].push(v);save()}break}
+case"letter":if(g("lbody").trim()){S.letters.unshift({t:new Date().toISOString(),to:g("lto")||"Someone",body:g("lbody")});save()}break;
+case"start":if(g("st")){S.start=g("st");save();msg="Updated."}break;
+case"setpw":setPw();return;
+case"exp":{const x=document.getElementById("ex");x.style.display="block";x.value=JSON.stringify(S);x.select();return}
+case"wsave":add({type:"week",mood:D.mood,thanks:gv("wg"),w:{call:D.call,wh:gv("wh"),bal:[D.bw,D.bh,D.bp,D.bm],foc:D.foc,body:D.body,sp:D.sp,y:gv("wy"),sq:gv("wsq"),hs:gv("wh2"),ns:gv("wns")}});D={mood:[],need:"",energy:0,tag:""};view="home";msg="Week saved. You don't have to explain more.";break;
+case"capadd":if(capG)capAdd();return;case"gset":gSet();return;case"gopen":gOpen();return;case"dopen":capOpen=+d.v;render();return;case"dclose":capOpen=null;render();return;case"ddel":if(!capG)return;if(cd2==+d.v){S.drops=S.drops.filter(x=>x.id!=+d.v);cd2=null;save()}else cd2=+d.v;render();return;case"pick":document.getElementById("cd").value=d.v;return;
+case"unlock":unlockPw();return}
+render()});
+document.addEventListener("change",async ev=>{if(ev.target.id!="ph")return;for(const f of ev.target.files){capD.photos.push(await shrink(f))}const t=document.getElementById("thm");if(t)t.innerHTML=capD.photos.map(p=>`<img src="${p}">`).join("")});
+(async()=>{try{const o=localStorage.getItem("watch2");if(o){await iset("w2",JSON.parse(o));localStorage.setItem("pw","1");localStorage.removeItem("watch2")}
+if(!hasPw()){const p=await iget("w1");if(p)S=p;fix();if(!p&&await save())localStorage.removeItem("watch1");else if(p)localStorage.removeItem("watch1")}}catch(e){}unlocked=!hasPw();render()})();
+</script><script>if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));try{navigator.storage.persist()}catch(e){}</script></body></html>
